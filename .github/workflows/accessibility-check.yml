@@ -1,0 +1,39 @@
+name: Cypress Accessibility Check
+
+on:
+  push:
+    branches: [master] # Trigger on push to master branch
+  workflow_dispatch:
+    inputs:
+      targetUrl:
+        description: "URL to test for accessibility"
+        required: true
+        default: "https://dequeuniversity.com/demo/mars/"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # Use a standard Linux runner
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Use Node.js v20 LTS
+          cache: "npm" # Cache npm dependencies
+
+      - name: Install Dependencies
+        run: npm ci # Use clean install for CI
+
+      - name: Run Accessibility Test and Generate Report
+        # Use the input URL if provided via workflow_dispatch, otherwise use the default
+        run: npm run test:a11y --url=${{ github.event.inputs.targetUrl || 'https://dequeuniversity.com/demo/mars/' }}
+
+      - name: Upload Axe Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: axe-accessibility-report # Name of the artifact
+          path: cypress/reports/axe/ # Path to the directory containing the report
+          if-no-files-found: error # Optional: fail if report isn't found
